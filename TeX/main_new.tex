@@ -1,0 +1,277 @@
+\documentclass{article}
+
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\usepackage{thmtools}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{framed}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\usepackage{verbatim}
+\usepackage[normalem]{ulem}
+\usepackage{enumerate}
+\usepackage{xurl}
+\usepackage{csquotes}
+\usepackage{parskip}
+\usepackage{tikz}
+\usepackage{fourier}
+\usepackage{listings}
+\usepackage[utf8]{inputenc}
+\usepackage{calc}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{ragged2e}
+\usepackage{flafter}
+\usepackage{multirow}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{tabularray}
+\usepackage{fancyvrb}
+\usepackage{setspace}
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}
+
+\setstretch{1.2}
+\geometry{
+    textheight=9in,
+    textwidth=5.5in,
+    top=1in,
+    headheight=12pt,
+    headsep=25pt,
+    footskip=30pt
+}
+\setlength{\parindent}{0pt}
+\graphicspath{ {./images/} }
+% ------------------------------------------------------------------------------
+
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% Cover Page and ToC
+% ------------------------------------------------------------------------------
+
+\title{ \normalsize \textsc{}
+		\\ [2.0cm]
+		\HRule{1.5pt} \\
+		\LARGE \textbf{\uppercase{STSCI 5100}
+		\HRule{2.0pt} \\ [0.6cm] \LARGE{Assignment 1} \vspace*{10\baselineskip}}
+		}
+\date{\today}
+\author{Ryan Zhou}
+
+\maketitle
+
+\newpage
+
+\tableofcontents
+
+% ------------------------------------------------------------------------------
+\newpage
+
+\section{Executive Summary}
+\section{Introduction}
+Cardiac events (heart diseases) are the leading cause of death for people of most racial and ethnic backgrounds in the United States. They may be “silent” and not diagnosed until a person experiences signs or symptoms of heart attack or heart failure. Researches have shown that several medical conditions and lifestyle choices can put people at a higher risk for heart diseases. The dataset used in this study was collected from 1910 individuals during the time period spanning from 2017 to 2020. It includes measures of health such as sleep hours, diabetes status, smoking status, and BMI. The dataset also includes demographic data such as age, gender, race, and education. 
+
+The goal of this study is to determine which combination of predictor variables leads to the highest probability of developing a cardiac disease. We are particularly interested in the effect of nightly sleep on the development of cardiac disease. By unraveling these associations, we hope to contribute valuable insights into preventive strategies and personalized interventions for individuals at risk. Although demographic factors cannot be controlled, individuals can take initiative to reduce their risk of cardiac events by controlling their lifestyle. The results from this study will inform people on the risk factors that they can control for. Furthermore, health professions can utilize this information to identify individuals at risk and provide tailored interventions. The insights gained from this study could pave the way for promoting cardiovascular health and reducing the national burden of heart-related diseases.
+
+Before analyzing our data, we spent some time checking and cleaning it. First of all, we removed two columns (X and seqn) that served for identification purposes. We also ran a summary of statistics on the dataset to get an overview of all the variables. We then found out that there are four variables (sleep hour, diabetes, smoker, and bmi) with missing values (NA). There are also some categorical variables with “Don’t Know” and “Refuse to Answer”  categories, and we treated them as missing values. We then ran linear regression to predict the missing values for sleep hour and bmi. However, the regression models had poor performance (very low $R^2$ values), so we used the median values to replace the missing values. For smoker and diabetes, we ran logistic regression to predict the missing values. 
+
+After handling the missing values, we utilized the splicing plots and mosaic plots to classify variable types (categorical or numerical) and re-code the categorical variables. The splicing plots also help us determine whether we need to transform the numerical variable before model fitting. We ran a splicing plot for each of the numerical variables to determine variable classification and transformation. For the categorical variables, we ran mosaic plots and the trend test to determine if we need to re-code them.
+
+ The next step was the two-way analysis, which is evaluating the association between the outcome and each predictor. We ran a chi-square test of association on all the categorical predictors, noting the ones that are significant. For the numerical predictors, we ran a likelihood ratio test on each of them to determine their significance. 
+As part of the model consideration process, we also look into the interaction terms through interaction plots and likelihood ratio tests. We created interaction plots of all the possible combinations of predictors. We also wrote a R function that ran the likelihood ratio test on all possible combinations of predictors and their interaction terms. In order for an interaction term to be considered significant, it has to have a p-value less than 0.01. 
+
+After we identified the significant predictors and interaction terms, we moved on to model selection. We decided to use the stepwise backward selection to pick our best model. We ran the step function in R using both AIC and BIC as the evaluation criteria. Ideally, we want to choose the model with the lowest AIC, but we need to turn to BIC if there are two models with very close AIC values (less than 2). After we picked our best model, we conducted the goodness-of-fit test to evaluate our model. We also created a classification table and ROC curve to evaluate the overall fitness of our model.
+
+
+\section*{Description of Subjects}
+\subsection*{Data cleaning}
+The data was iteratively checked and cleaned throughout multiple steps of the data cleaning process. In order to validate our data wrangling, we frequently used R’s summary function to obtain feature-wise statistics for our numerical variables. \\
+
+\noindent To address the missing values prevalent in our dataset, we first needed to do some preliminary analysis of the dataset. We identified four potential predictors containing NAs: \verb|smoker|, \verb|sleep.hrs|, \verb|diabetes|, and \verb|BMI|. There were a couple of ways to handle this data, but we decided the best approach would be to employ a mixture of prediction and imputation. 
+
+\subsubsection*{Null value prediction}
+In order to use prediction to fill in the missing values, our goal was to build a linear regression model. First, we built a heat map to select for alternate predictors with the highest correlation with the predictor of interest. Then, to verify that prediction was really the best approach, we evaluated the model using $R^2$. For models with relatively high performance, we proceeded to use the linear regression model’s predicted values to fill in missing values for each of the columns: \verb|smoker|, \verb|sleep.hrs|. In doing so, we were able to preserve potential relationships between variables and prioritize model performance.
+\subsubsection*{Median imputation}
+Our \verb|sleep.hrs| and \verb|BMI| linear model yielded lower $R^2$ results, rendering prediction as an undesirable method to deal with the missing values in both. Instead, we analyzed the distribution and found that due to the presence of outliers in the data, it would be best to replace these missing values with their respective medians.
+\subsubsection*{Drop}
+The "diabetes" column initially encompasses five distinct categories, yet it is marked by the presence of 72 null values. To facilitate subsequent data cleaning processes, we systematically assigned the singular instance of the value "Don't know" to the null values, as this particular category conveys no informative content and is functionally equivalent to the null values. We meticulously examined the prevalence and proportion of null values within the "diabetes" column. It was ascertained that only [percent] of the entries in this column were null values. Considering that "diabetes" has more than 2 categories as the outcome variable for predicting null values, we deemed it safe to eliminate all instances of null values. Therefore the "diabetes" column was purged of null values, resulting in a refined dataset wherein the variable now manifests three distinct categories: 1(yes), 2(no), and 3(borderline). The distribution of counts for these categories is delineated as follows: [plot]
+
+\subsection*{\protect\Verb+event+}
+\subsection*{\protect\Verb+gender+}
+\subsection*{\protect\Verb+age+}
+\subsection*{\protect\Verb+ethnic1+}
+\subsection*{\protect\Verb+educ+}
+\subsection*{\protect\Verb+sleep.hrs+}
+\subsection*{\protect\Verb+diabetes+}
+In the process of cleaning the 
+\verb|diabetes| column in the dataframe \verb|data| several steps were undertaken to handle missing values and refine the representation of the variable. The sequence of operations is detailed below:
+\subsubsection*{Handling "Don't know"}
+The initial step involves replacing the values representing "Don't know" in the "diabetes" column with NaN (Not a Number) to facilitate subsequent processing.
+\begin{verbatim}
+data$diabetes[data$diabetes == 9] <- NaN
+\end{verbatim}
+\subsubsection*{Initial Treatment of Null Values }
+We initially treat the "Borderline" category as "Yes" (1) and "No" (0) in preparation for logistic regression. However, the subsequent lines for logistic regression and evaluation are commented out. Therefore we used logistic regression to predict missing values in the "diabetes" column based on other variables in the same row. The predicted probabilities are then used to impute the missing values based on the following codes:
+\begin{verbatim}
+data_no_na$diabetes[data_no_na$diabetes == 3] <- 1 
+data_no_na$diabetes[data_no_na$diabetes == 2] <- 0 
+predicted_diabetes <-ifelse(predict(diab_pr,newdata = data_no_na)>=.5,1,0)
+mean(data_no_na$diabetes == predicted_diabetes)
+rows_with_na <- is.na(data$diabetes)
+predicted_probabilities <- predict(diab_pr, newdata = data[rows_with_na,]
+, type = "response")
+data$diabetes[rows_with_na] <- ifelse(predicted_probabilities>=.5,1,0)
+\end{verbatim}
+\subsubsection*{Subsequent Treatment of Null Values}
+After careful consideration, we decide not to directly treat "Borderline" as "Yes,", which leads to the abandonment of multinomial logistic regression if null value prediction is still adopted. So dropping null values is used in the latest methods. All rows with NaN values in column \verb|diabetes| are dropped:
+\begin{verbatim}
+data <- subset(data, !is.na(diabetes))
+\end{verbatim}
+\subsubsection*{Visualization and Categorization Exploration}
+A categorical slicing plot is generated to explore the empirical probabilities associated with different categories of the "diabetes" variable. The plot aids in the decision-making process regarding the treatment of  \verb|diabetes| as a categorical or continuous variable. So we recoded the categories as 0:No, 1:Borderline, 2:Yes to represent the severity of heart disease by the following code:
+\begin{verbatim}
+data$diabetes[data_no_na$diabetes == 2] <- 0 
+data$diabetes[data_no_na$diabetes == 1] <- 2
+data$diabetes[data_no_na$diabetes == 3] <- 1
+\end{verbatim}
+\subsection*{\protect\Verb+smoker+}
+\subsection*{\protect\Verb+BMI+}
+
+\section*{Results}
+
+
+
+\begin{align*}
+\text{logit}(\pi_E)=\ln  \left( \frac{\mathbb{P}(\text{event})}{1-\mathbb{P}(\text{event})} \right)&=\beta_0+ \beta_{\text{age}} \text{age}+ \beta_{\text{Ethnic:Other}} \text{Ethnic:Other} +\beta_{\text{Ethnic:White}} \text{Ethnic:White}\\
+&+\beta_{\text{Ethnic:White}} \text{Ethnic:White}+\beta_{\text{Smoker}} \text{Smoker} + \beta_{\text{BMI}} \text{BMI}
+\end{align*}
+\section*{Discussion}
+
+
+
+\section*{\textit{DRAFT ZONE:}}
+\begin{table}[!ht]
+\tiny
+\centering
+\caption{Interaction term p-value }
+\begin{tabularx}{\linewidth}{XXXXXXXXX} 
+\toprule
+~ & gender & age & ethnic & educ & sleep.hrs & diabetes & smoker & bmi \\
+\midrule
+gender & ~ & 0.8344456 & 0.1520043 & \textcolor{red}{\textbf{0.002665085}} & 0.3470716 & 0.1948965 & 0.1058904 & 0.4440583 \\
+age & 0.8344456 & ~ & 0.03264694 & 0.1542297 & 0.8900331 & 0.5317001 & 0.4682568 & 0.1303657 \\  
+ethnic & 0.1520043 & 0.03264694 & ~ & 0.8485828 & \textcolor{red}{0.04004753} & 0.7738274 & \textcolor{red}{0.04341657} & 0.09220537 \\
+educ & \textcolor{red}{\textbf{0.002665085}} & 0.1542297 & 0.8485828 & ~ & 0.9418661 & 0.1258026 & 0.5830936 & 0.3356191 \\
+sleep.hrs & 0.3470716 & 0.8900331 & \textcolor{red}{0.04004753} & 0.9418661 & ~ & 0.9182511 & 0.8162905 & 0.4844835 \\  
+diabetes & 0.1948965 & 0.5317001 & 0.7738274 & 0.1258026 & 0.9182511 & ~ & 0.3551579 & 0.05272613 \\
+smoker & 0.1058904 & 0.4682568 & \textcolor{red}{0.04341657} & 0.5830936 & 0.8162905 & 0.3551579 & ~ & 0.1979291 \\
+bmi & 0.4440583 & 0.1303657 & 0.09220537 & 0.3356191 & 0.4844835 & 0.05272613 & 0.1979291 & ~ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+
+
+\begin{table}[!ht]
+\small
+\caption{Variable statistics (*=categorical)}
+\begin{tabularx}{\linewidth}{XXXXXXXXX}
+% {|X|X|X|X|X|X|X|X|X|}
+\toprule
+\hline
+\textbf{event*} & \textbf{gender*} & \textbf{age} & \textbf{ethnic1*} & \textbf{educ*} & \textbf{sleep.hrs*} & \textbf{diabetes} & \textbf{smoker*} & \textbf{bmi} \\ 
+\midrule\hline
+0:1057 & 1:885 & Min.   :20.00 & Black:511 & 1:137 & <=5 hrs:162 & Min.   :0.0000 & 0:1430 & Min.   :14.20 \\ \hline
+1: 779 & 2:951 & 1st Qu.:36.00 & Other:723 & 2:209 & 5-6 hrs:200 & 1st Qu.:0.0000 & 1: 406 & 1st Qu.:25.10 \\ \hline
+ &  & Median :52.00 & White:602 & 3:438 & 6-7 hrs:407 & Median :0.0000 &  & Median :29.20 \\ \hline
+ &  & Mean   :50.98 &  & 4:596 & 7-9 hrs:865 & Mean   :0.3164 &  & Mean   :30.45 \\ \hline
+ &  & 3rd Qu.:64.00 &  & 5:456 & >9 hrs :202 & 3rd Qu.:0.0000 &  & 3rd Qu.:34.20 \\ \hline
+ &  & Max.   :80.00 &  &  &  & Max.   :2.0000 &  & Max.   :86.20 \\ \hline
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+
+\begin{table}
+\centering
+\caption{Statistics for categorical variables}
+\resizebox{\linewidth}{!}{%
+\begin{tblr}{
+  cell{2}{1} = {r=2}{},
+  cell{2}{6} = {r=2}{},
+  cell{2}{7} = {r=2}{},
+  cell{2}{8} = {r=2}{},
+  cell{4}{1} = {r=3}{},
+  cell{4}{6} = {r=3}{},
+  cell{4}{7} = {r=3}{},
+  cell{4}{8} = {r=3}{},
+  cell{7}{1} = {r=5}{},
+  cell{7}{6} = {r=5}{},
+  cell{7}{7} = {r=5}{},
+  cell{7}{8} = {r=5}{},
+  cell{12}{1} = {r=5}{},
+  cell{12}{6} = {r=5}{},
+  cell{12}{7} = {r=5}{},
+  cell{12}{8} = {r=5}{},
+  cell{17}{1} = {r=2}{},
+  cell{17}{6} = {r=2}{},
+  cell{17}{7} = {r=2}{},
+  cell{17}{8} = {r=2}{},
+  vlines,
+  hline{1-2,4,7,12,17,19} = {-}{},
+  hline{3,5-6,8-11,13-16,18} = {2-5}{},
+}
+Predictor & Categories                                         & Total(percent) & Absence of cardiac event, N (\%) & Presence of cardiac event, N (\%) & Chisq Test & df & p-value  \\
+Gender    & Male                                               & 924 (48.40\%)  & 518 (56.06\%)                    & 406 (43.94\%)                     & 1,4412     & 1  & 0,2299   \\
+          & Female                                             & 985 (51.60\%)  & 580 (58.88\%)                    & 405 (41.12\%)                     &            &    &          \\
+Ethnicity & White                                              & 856 (44.84\%)  & 498 (58.18\%)                    & 358 (41.82\%)                     & 24,971     & 2  & 3,78E-06 \\
+          & Black                                              & 528 (27.66\%)  & 261 (49.43\%)                    & 267 (50.57\%)                     &            &    &          \\
+          & Other                                              & 525 (27.50\%)  & 339 (64.57\%)                    & 186 (35.43\%)                     &            &    &          \\
+sleep.hrs & <5 hrs                                             & 162 (8.82\%)   & 81 (50\%)                        & 81 (50\%)                         & 8,6699     & 4  & 0,0699   \\
+          & 5-6 hrs                                            & 200 (10.89\%)  & 112 (56\%)                       & 88 (44\%)                         &            &    &          \\
+          & 6-7 hrs                                            & 407 (22.17\%)  & 253 (62.16\%)                    & 154 (37.84\%)                     &            &    &          \\
+          & 7-9 hrs                                            & 865 (47.11\%)  & 502 (58.03\%)                    & 363 (41.97\%)                     &            &    &          \\
+          & 9 hrs~                                             & 202 (11.00\%)  & 109 (53.96\%)                    & 93 (46.04\%)                      &            &    &          \\
+Education & Less than 9th grade                                & 143 (7.49\%)   & 85 (59.44\%)                     & 58 (40.56\%)                      & 10,104     & 4  & 0,03871  \\
+          & 9-11th grade (Includes 12th grade with no diploma) & 220 (11.52\%)  & 116 (52.73\%)                    & 104 (47.27\%)                     &            &    &          \\
+          & High school graduate/GED equivalent                & 456 (23.89\%)  & 242 (53.07\%)                    & 214 (46.93\%)                     &            &    &          \\
+          & Some college or AA degree                          & 617 (32.32\%)  & 362 (58.67\%)                    & 255 (41.33\%)                     &            &    &          \\
+          & College graduate or above                          & 473 (24.78\%)  & 293 (62.95\%)                    & 180 (38.05\%)                     &            &    &          \\
+Smoker    & Yes                                                & 424 (22.21\%)  & 254 (59.91\%)                    & 170 (40.09\%)                     & 1,1502     & 1  & 0,2835   \\
+          & No                                                 & 1485 (77.79\%) & 844 (56.84\%)                    & 641 (43.16\%)                     &            &    &          
+\end{tblr}
+}
+\end{table}
+
+
+\begin{table}[!ht]
+\caption{Statistics of variables in the final model}
+    \centering
+    \begin{tabular}{lllll}
+    \hline
+    \hline
+        \textbf{Predictor}  & \textbf{Parameter estimates}  & \textbf{Odds ratios}  & \textbf{Odds ratio CI}  & \textbf{p-value} \\ \hline
+        (Intercept) & -5.84 & 0.0029 & [0.0014,0.0060] & <0.0001 \\ \hline
+        age & 0.073 & 1.08 & [1.07,1.08] & <0.0001 \\ \hline
+        ethnic1:Other & -0.59 & 0.554 & [0.423,0.731] & <0.0001 \\ \hline
+        ethnic1:White & -0.63 & 0.533 & [0.399,0.707] & <0.0001 \\ \hline
+        smoker1 & 0.33 & 1.39 & [1.06,1.83] & 0.0161 \\ \hline
+        bmi & 0.067 & 1.07 & [1.05,1.09] & <0.0001 \\ \hline
+        \hline
+    \end{tabular}
+\end{table}
+
+\end{document}
